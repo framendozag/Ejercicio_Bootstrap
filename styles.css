@@ -1,0 +1,26 @@
+body {
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.card {
+  border: none;
+  border-radius: 16px;
+}
+
+.wallet-icon {
+  font-size: 48px;
+}
+
+.balance-card {
+  background: linear-gradient(135deg, #1a73e8, #0d47a1);
+}
+
+.btn {
+  border-radius: 8px;
+}
+
+.list-group-item {
+  border-radius: 8px !important;
+  margin-bottom: 6px;
+  border: 1px solid #dee2e6;
+}
