@@ -7,39 +7,38 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css" />
 </head>
-<body class="bg-dark d-flex align-items-center justify-content-center vh-100">
+<body class="bg-dark d-flex align-items-center justify-content-center min-vh-100 py-4">
 
-  <div class="card shadow-lg p-4" style="width: 100%; max-width: 420px;">
-    <div class="text-center mb-4">
+  <div class="card shadow-lg p-4" style="width: 100%; max-width: 460px;">
+    <div class="text-center mb-3">
       <div class="wallet-icon mb-2">📤</div>
       <h2 class="fw-bold">Enviar Dinero</h2>
+      <p class="text-muted mb-0">Saldo: <strong id="saldoDisplay">$0,00</strong></p>
     </div>
 
+    <div id="mensaje" class="alert d-none mb-3"></div>
+
     <!-- Buscar contacto -->
-    <form class="mb-3">
+    <div class="mb-3">
       <label class="form-label fw-semibold">Buscar en agenda</label>
       <div class="input-group">
-        <input type="text" class="form-control" placeholder="Nombre o email..." />
-        <button class="btn btn-primary" type="button">Buscar</button>
+        <input type="text" id="buscador" class="form-control" placeholder="Nombre o alias..." />
+        <button class="btn btn-primary" onclick="buscarContacto()">Buscar</button>
       </div>
-    </form>
+    </div>
+
+    <!-- Monto -->
+    <div class="mb-3">
+      <label class="form-label fw-semibold">Monto a enviar</label>
+      <div class="input-group">
+        <span class="input-group-text">$</span>
+        <input type="number" id="montoEnvio" class="form-control" placeholder="0.00" min="1" />
+      </div>
+    </div>
 
     <!-- Lista de contactos -->
-    <p class="fw-semibold mb-2">Contactos frecuentes</p>
-    <ul class="list-group mb-3">
-      <li class="list-group-item d-flex justify-content-between align-items-center">
-        <span>👤 María García</span>
-        <button class="btn btn-sm btn-primary">Enviar</button>
-      </li>
-      <li class="list-group-item d-flex justify-content-between align-items-center">
-        <span>👤 Carlos López</span>
-        <button class="btn btn-sm btn-primary">Enviar</button>
-      </li>
-      <li class="list-group-item d-flex justify-content-between align-items-center">
-        <span>👤 Ana Martínez</span>
-        <button class="btn btn-sm btn-primary">Enviar</button>
-      </li>
-    </ul>
+    <p class="fw-semibold mb-2">Contactos</p>
+    <ul class="list-group mb-3" id="listaContactos"></ul>
 
     <div class="d-grid gap-2">
       <button class="btn btn-outline-success fw-bold" data-bs-toggle="modal" data-bs-target="#modalContacto">
@@ -58,29 +57,155 @@
           <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
         <div class="modal-body">
-          <form>
+          <div id="mensajeModal" class="alert d-none mb-3"></div>
+          <form id="formContacto">
             <div class="mb-3">
-              <label class="form-label">Nombre</label>
-              <input type="text" class="form-control" placeholder="Nombre completo" />
+              <label class="form-label">Nombre y Apellido</label>
+              <input type="text" id="cNombre" class="form-control" placeholder="Ej: María García" required />
             </div>
             <div class="mb-3">
-              <label class="form-label">Email</label>
-              <input type="email" class="form-control" placeholder="correo@ejemplo.com" />
+              <label class="form-label">Número de CBU</label>
+              <input type="text" id="cCBU" class="form-control" placeholder="22 dígitos" maxlength="22" required />
             </div>
             <div class="mb-3">
-              <label class="form-label">Teléfono</label>
-              <input type="tel" class="form-control" placeholder="+56 9 1234 5678" />
+              <label class="form-label">Alias</label>
+              <input type="text" id="cAlias" class="form-control" placeholder="Ej: maria.garcia" required />
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Nombre del Banco</label>
+              <input type="text" id="cBanco" class="form-control" placeholder="Ej: Banco Nación" required />
             </div>
           </form>
         </div>
         <div class="modal-footer">
           <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-          <button class="btn btn-success" data-bs-dismiss="modal">Guardar Contacto</button>
+          <button class="btn btn-success" onclick="guardarContacto()">Guardar Contacto</button>
         </div>
       </div>
     </div>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    // Contactos por defecto si no hay ninguno guardado
+    if (!localStorage.getItem("contactos")) {
+      localStorage.setItem("contactos", JSON.stringify([
+        { nombre: "María García",  cbu: "0000003100012345678901", alias: "maria.garcia",  banco: "Banco Nación" },
+        { nombre: "Carlos López",  cbu: "0000007900098765432100", alias: "carlos.lopez",  banco: "Santander" },
+        { nombre: "Ana Martínez",  cbu: "0000001500056781234560", alias: "ana.martinez",  banco: "BBVA" }
+      ]));
+    }
+
+    let contactoSeleccionado = null;
+
+    function renderContactos(lista) {
+      const ul = document.getElementById("listaContactos");
+      ul.innerHTML = "";
+      if (lista.length === 0) {
+        ul.innerHTML = '<li class="list-group-item text-muted">No se encontraron contactos.</li>';
+        return;
+      }
+      lista.forEach((c, i) => {
+        ul.innerHTML += `
+          <li class="list-group-item">
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <p class="mb-0 fw-semibold">👤 ${c.nombre}</p>
+                <small class="text-muted">${c.banco} — Alias: ${c.alias}</small>
+              </div>
+              <button class="btn btn-sm btn-primary" onclick="enviarDinero(${i})">Enviar</button>
+            </div>
+          </li>`;
+      });
+    }
+
+    function buscarContacto() {
+      const query = document.getElementById("buscador").value.toLowerCase();
+      const contactos = JSON.parse(localStorage.getItem("contactos") || "[]");
+      const filtrados = contactos.filter(c =>
+        c.nombre.toLowerCase().includes(query) || c.alias.toLowerCase().includes(query)
+      );
+      renderContactos(filtrados);
+    }
+
+    function enviarDinero(index) {
+      const contactos = JSON.parse(localStorage.getItem("contactos") || "[]");
+      const contacto  = contactos[index];
+      const monto     = parseFloat(document.getElementById("montoEnvio").value);
+      const saldo     = parseFloat(localStorage.getItem("saldo")) || 0;
+      const mensaje   = document.getElementById("mensaje");
+
+      if (!monto || monto <= 0) {
+        mensaje.className = "alert alert-warning";
+        mensaje.textContent = "⚠️ Ingresa un monto válido antes de enviar.";
+        mensaje.classList.remove("d-none");
+        return;
+      }
+      if (monto > saldo) {
+        mensaje.className = "alert alert-danger";
+        mensaje.textContent = "❌ Saldo insuficiente para realizar la transferencia.";
+        mensaje.classList.remove("d-none");
+        return;
+      }
+
+      const saldoNuevo = saldo - monto;
+      localStorage.setItem("saldo", saldoNuevo.toString());
+
+      const movimientos = JSON.parse(localStorage.getItem("movimientos") || "[]");
+      movimientos.unshift({
+        descripcion: `Envío a ${contacto.nombre} (${contacto.banco})`,
+        monto: monto,
+        tipo: "egreso",
+        fecha: new Date().toLocaleDateString("es-AR", { day: "2-digit", month: "short", year: "numeric" })
+      });
+      localStorage.setItem("movimientos", JSON.stringify(movimientos));
+
+      mensaje.className = "alert alert-success";
+      mensaje.textContent = `✅ Enviaste $${monto.toLocaleString("es-AR", { minimumFractionDigits: 2 })} a ${contacto.nombre}. Nuevo saldo: $${saldoNuevo.toLocaleString("es-AR", { minimumFractionDigits: 2 })}`;
+      mensaje.classList.remove("d-none");
+
+      document.getElementById("montoEnvio").value = "";
+      document.getElementById("saldoDisplay").textContent =
+        "$" + saldoNuevo.toLocaleString("es-AR", { minimumFractionDigits: 2 });
+    }
+
+    function guardarContacto() {
+      const nombre = document.getElementById("cNombre").value.trim();
+      const cbu    = document.getElementById("cCBU").value.trim();
+      const alias  = document.getElementById("cAlias").value.trim();
+      const banco  = document.getElementById("cBanco").value.trim();
+      const msgModal = document.getElementById("mensajeModal");
+
+      if (!nombre || !cbu || !alias || !banco) {
+        msgModal.className = "alert alert-danger";
+        msgModal.textContent = "❌ Completa todos los campos.";
+        msgModal.classList.remove("d-none");
+        return;
+      }
+      if (cbu.length !== 22 || !/^\d+$/.test(cbu)) {
+        msgModal.className = "alert alert-warning";
+        msgModal.textContent = "⚠️ El CBU debe tener exactamente 22 dígitos numéricos.";
+        msgModal.classList.remove("d-none");
+        return;
+      }
+
+      const contactos = JSON.parse(localStorage.getItem("contactos") || "[]");
+      contactos.push({ nombre, cbu, alias, banco });
+      localStorage.setItem("contactos", JSON.stringify(contactos));
+
+      bootstrap.Modal.getInstance(document.getElementById("modalContacto")).hide();
+      document.getElementById("formContacto").reset();
+      msgModal.classList.add("d-none");
+      renderContactos(contactos);
+    }
+
+    // Inicializar
+    const saldo = parseFloat(localStorage.getItem("saldo")) || 0;
+    document.getElementById("saldoDisplay").textContent =
+      "$" + saldo.toLocaleString("es-AR", { minimumFractionDigits: 2 });
+
+    renderContactos(JSON.parse(localStorage.getItem("contactos") || "[]"));
+  </script>
+
 </body>
 </html>

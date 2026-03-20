@@ -13,33 +13,75 @@
     <div class="text-center mb-4">
       <div class="wallet-icon mb-2">💰</div>
       <h2 class="fw-bold">Depositar</h2>
-      <p class="text-muted">Ingresa el monto que deseas depositar</p>
+      <p class="text-muted">Saldo actual: <strong id="saldoActual">$0,00</strong></p>
     </div>
 
-    <form action="menu.html">
+    <div id="mensaje" class="alert d-none mb-3"></div>
+
+    <form id="formDeposito">
       <div class="mb-3">
         <label class="form-label fw-semibold">Monto a depositar</label>
         <div class="input-group">
           <span class="input-group-text">$</span>
-          <input type="number" class="form-control form-control-lg" placeholder="0.00" min="1" required />
+          <input type="number" id="monto" class="form-control form-control-lg" placeholder="0.00" min="1" required />
         </div>
       </div>
-
       <div class="mb-4">
         <label class="form-label fw-semibold">Método de pago</label>
-        <select class="form-select">
+        <select id="metodo" class="form-select">
           <option>Tarjeta de crédito</option>
           <option>Tarjeta de débito</option>
           <option>Transferencia bancaria</option>
         </select>
       </div>
-
       <div class="d-grid gap-2">
         <button type="submit" class="btn btn-success py-2 fw-bold">Realizar Depósito</button>
         <a href="menu.html" class="btn btn-outline-secondary">Volver al Menú</a>
       </div>
     </form>
   </div>
+
+  <script>
+    // Mostrar saldo actual
+    const saldoActual = parseFloat(localStorage.getItem("saldo")) || 0;
+    document.getElementById("saldoActual").textContent =
+      "$" + saldoActual.toLocaleString("es-AR", { minimumFractionDigits: 2 });
+
+    document.getElementById("formDeposito").addEventListener("submit", function(e) {
+      e.preventDefault();
+
+      const monto   = parseFloat(document.getElementById("monto").value);
+      const metodo  = document.getElementById("metodo").value;
+      const mensaje = document.getElementById("mensaje");
+
+      if (!monto || monto <= 0) {
+        mensaje.className = "alert alert-danger";
+        mensaje.textContent = "❌ Ingresa un monto válido mayor a 0.";
+        mensaje.classList.remove("d-none");
+        return;
+      }
+
+      // Actualizar saldo
+      const saldoNuevo = (parseFloat(localStorage.getItem("saldo")) || 0) + monto;
+      localStorage.setItem("saldo", saldoNuevo.toString());
+
+      // Guardar movimiento
+      const movimientos = JSON.parse(localStorage.getItem("movimientos") || "[]");
+      movimientos.unshift({
+        descripcion: `Depósito via ${metodo}`,
+        monto: monto,
+        tipo: "ingreso",
+        fecha: new Date().toLocaleDateString("es-AR", { day: "2-digit", month: "short", year: "numeric" })
+      });
+      localStorage.setItem("movimientos", JSON.stringify(movimientos));
+
+      mensaje.className = "alert alert-success";
+      mensaje.textContent = `✅ Depósito de $${monto.toLocaleString("es-AR", { minimumFractionDigits: 2 })} realizado. Nuevo saldo: $${saldoNuevo.toLocaleString("es-AR", { minimumFractionDigits: 2 })}`;
+      mensaje.classList.remove("d-none");
+
+      setTimeout(() => window.location.href = "menu.html", 2000);
+    });
+  </script>
 
 </body>
 </html>

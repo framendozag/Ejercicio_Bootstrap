@@ -15,15 +15,31 @@
 
     <div class="balance-card rounded p-4 mb-4">
       <p class="text-white-50 mb-1">Saldo disponible</p>
-      <h1 class="text-white fw-bold">$2.500,00</h1>
+      <h1 class="text-white fw-bold" id="saldoDisplay">$0,00</h1>
     </div>
 
+    <div id="mensajeRedireccion" class="alert alert-info d-none mb-3"></div>
+
     <div class="d-grid gap-3">
-      <a href="deposit.html" class="btn btn-success py-2 fw-bold fs-6">💰 Depositar</a>
-      <a href="sendmoney.html" class="btn btn-primary py-2 fw-bold fs-6">📤 Enviar Dinero</a>
-      <a href="transactions.html" class="btn btn-outline-secondary py-2 fw-bold fs-6">📋 Últimos Movimientos</a>
+      <button onclick="redirigir('deposit.html', 'Depositar')"        class="btn btn-success py-2 fw-bold fs-6">💰 Depositar</button>
+      <button onclick="redirigir('sendmoney.html', 'Enviar Dinero')"  class="btn btn-primary py-2 fw-bold fs-6">📤 Enviar Dinero</button>
+      <button onclick="redirigir('transactions.html', 'Últimos Movimientos')" class="btn btn-outline-secondary py-2 fw-bold fs-6">📋 Últimos Movimientos</button>
     </div>
   </div>
+
+  <script>
+    // Mostrar saldo actualizado
+    const saldo = parseFloat(localStorage.getItem("saldo")) || 0;
+    document.getElementById("saldoDisplay").textContent =
+      "$" + saldo.toLocaleString("es-AR", { minimumFractionDigits: 2 });
+
+    function redirigir(url, nombre) {
+      const msg = document.getElementById("mensajeRedireccion");
+      msg.textContent = `⏳ Redirigiendo a ${nombre}...`;
+      msg.classList.remove("d-none");
+      setTimeout(() => window.location.href = url, 1200);
+    }
+  </script>
 
 </body>
 </html>

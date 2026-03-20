@@ -7,54 +7,47 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css" />
 </head>
-<body class="bg-dark d-flex align-items-center justify-content-center vh-100">
+<body class="bg-dark d-flex align-items-center justify-content-center min-vh-100 py-4">
 
-  <div class="card shadow-lg p-4" style="width: 100%; max-width: 420px;">
+  <div class="card shadow-lg p-4" style="width: 100%; max-width: 460px;">
     <div class="text-center mb-4">
       <div class="wallet-icon mb-2">📋</div>
       <h2 class="fw-bold">Últimos Movimientos</h2>
+      <p class="text-muted mb-0">Saldo actual: <strong id="saldoDisplay">$0,00</strong></p>
     </div>
 
-    <ul class="list-group mb-4">
-      <li class="list-group-item d-flex justify-content-between align-items-center">
-        <div>
-          <p class="mb-0 fw-semibold">Depósito</p>
-          <small class="text-muted">18 Mar 2026</small>
-        </div>
-        <span class="badge bg-success fs-6">+$500,00</span>
-      </li>
-      <li class="list-group-item d-flex justify-content-between align-items-center">
-        <div>
-          <p class="mb-0 fw-semibold">Envío a María García</p>
-          <small class="text-muted">17 Mar 2026</small>
-        </div>
-        <span class="badge bg-danger fs-6">-$150,00</span>
-      </li>
-      <li class="list-group-item d-flex justify-content-between align-items-center">
-        <div>
-          <p class="mb-0 fw-semibold">Depósito</p>
-          <small class="text-muted">15 Mar 2026</small>
-        </div>
-        <span class="badge bg-success fs-6">+$1.000,00</span>
-      </li>
-      <li class="list-group-item d-flex justify-content-between align-items-center">
-        <div>
-          <p class="mb-0 fw-semibold">Envío a Carlos López</p>
-          <small class="text-muted">12 Mar 2026</small>
-        </div>
-        <span class="badge bg-danger fs-6">-$200,00</span>
-      </li>
-      <li class="list-group-item d-flex justify-content-between align-items-center">
-        <div>
-          <p class="mb-0 fw-semibold">Depósito</p>
-          <small class="text-muted">10 Mar 2026</small>
-        </div>
-        <span class="badge bg-success fs-6">+$1.350,00</span>
-      </li>
+    <ul class="list-group mb-4" id="listaMovimientos">
+      <li class="list-group-item text-muted text-center">Sin movimientos registrados.</li>
     </ul>
 
     <a href="menu.html" class="btn btn-primary w-100 fw-bold py-2">Volver al Menú Principal</a>
   </div>
+
+  <script>
+    const saldo = parseFloat(localStorage.getItem("saldo")) || 0;
+    document.getElementById("saldoDisplay").textContent =
+      "$" + saldo.toLocaleString("es-AR", { minimumFractionDigits: 2 });
+
+    const movimientos = JSON.parse(localStorage.getItem("movimientos") || "[]");
+    const lista = document.getElementById("listaMovimientos");
+
+    if (movimientos.length === 0) return;
+
+    lista.innerHTML = "";
+    movimientos.forEach(m => {
+      const esIngreso = m.tipo === "ingreso";
+      lista.innerHTML += `
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+          <div>
+            <p class="mb-0 fw-semibold">${m.descripcion}</p>
+            <small class="text-muted">${m.fecha}</small>
+          </div>
+          <span class="badge ${esIngreso ? "bg-success" : "bg-danger"} fs-6">
+            ${esIngreso ? "+" : "-"}$${parseFloat(m.monto).toLocaleString("es-AR", { minimumFractionDigits: 2 })}
+          </span>
+        </li>`;
+    });
+  </script>
 
 </body>
 </html>
